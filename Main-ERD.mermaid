@@ -1,0 +1,211 @@
+erDiagram
+
+    %% ============ MASTER DATA ============
+    REGION {
+        string region_code PK
+        string region_name
+    }
+
+    USER {
+        int user_id PK
+        string username UK
+        string password
+        string role
+        string status
+        datetime created_at
+    }
+
+    EMPLOYEE {
+        int employee_id PK
+        int user_id FK
+        string employee_number UK
+        string name
+        string position
+        string division
+        string phone
+        string email
+        string photo
+    }
+
+    PACKAGE {
+        int package_id PK
+        string package_name
+        decimal price
+        string service_type
+        text description
+    }
+
+    CLIENT {
+        int client_id PK
+        string customer_number UK
+        int package_id FK
+        string name
+        string phone
+        string address
+        decimal latitude
+        decimal longitude
+        datetime created_at
+        datetime updated_at
+    }
+
+    %% ============ INFRASTRUKTUR JARINGAN ============
+    ODP {
+        int odp_id PK
+        string odp_code UK
+        string region_code FK
+        string name
+        decimal latitude
+        decimal longitude
+        string status
+        int capacity
+        int used_core
+        int available_core
+    }
+
+    %% ============ INVENTARIS & ASET ============
+    MODEM {
+        string serial_number PK
+        string mac_address
+        string brand_type
+        string current_region_code FK
+        string status
+        date date_in_warehouse
+        date date_out_warehouse
+    }
+
+    MODEM_TRANSACTION {
+        int transaction_id PK
+        string serial_number FK
+        int client_id FK
+        int employee_id FK
+        date install_date
+        date uninstall_date
+        string old_modem_serial
+        string service_status
+    }
+
+    INVENTORY {
+        int inventory_id PK
+        string item_code UK
+        string item_name
+        string category
+        int stock
+        string unit
+    }
+
+    INVENTORY_USAGE {
+        int usage_id PK
+        int inventory_id FK
+        int ticket_id FK
+        int quantity
+        datetime used_at
+    }
+
+    %% ============ TICKETING / PELAPORAN ============
+    QR_CODE {
+        int qr_id PK
+        int client_id FK
+        int generated_by FK
+        string token UK
+        string qr_data
+        string status
+        datetime generated_at
+        datetime expired_at
+    }
+
+    TICKET {
+        int ticket_id PK
+        string ticket_number UK
+        int client_id FK
+        int odp_id FK
+        int qr_id FK
+        int assigned_employee_id FK
+        string issue_type
+        string priority
+        string status
+        text description
+        string location
+        string photo_modem
+        datetime reported_at
+        datetime taken_at
+        datetime closed_at
+    }
+
+    TICKET_HANDLING {
+        int handling_id PK
+        int ticket_id FK
+        int employee_id FK
+        text action_taken
+        text notes
+        datetime start_time
+        datetime end_time
+    }
+
+    WORK_EVIDENCE {
+        int evidence_id PK
+        int ticket_id FK
+        int uploaded_by FK
+        string photo
+        string category
+        decimal latitude
+        decimal longitude
+        datetime created_at
+    }
+
+    %% ============ SDM & OPERASIONAL ============
+    SHIFT {
+        int shift_id PK
+        string shift_name
+        datetime start_time
+        datetime end_time
+        string status
+    }
+
+    SHIFT_MEMBER {
+        int shift_member_id PK
+        int shift_id FK
+        int employee_id FK
+    }
+
+    ATTENDANCE {
+        int attendance_id PK
+        int user_id FK
+        int ticket_id FK
+        int shift_id FK
+        int odp_id FK
+        string attendance_type
+        string action
+        datetime attendance_time
+        decimal latitude
+        decimal longitude
+        decimal accuracy
+        string face_photo
+        string status
+    }
+
+    %% ============ RELASI ============
+    USER ||--o| EMPLOYEE : "punya profil"
+    REGION ||--o{ ODP : "menaungi"
+    REGION ||--o{ MODEM : "menyimpan"
+    PACKAGE ||--o{ CLIENT : "dipilih"
+    CLIENT ||--o{ MODEM_TRANSACTION : "melakukan"
+    MODEM ||--o{ MODEM_TRANSACTION : "dicatat pada"
+    EMPLOYEE ||--o{ MODEM_TRANSACTION : "memasang/cabut"
+    CLIENT ||--o{ QR_CODE : "memiliki"
+    USER ||--o{ QR_CODE : "menerbitkan"
+    QR_CODE |o--o| TICKET : "memicu"
+    CLIENT ||--o{ TICKET : "melapor"
+    ODP |o--o{ TICKET : "terkait gangguan"
+    EMPLOYEE |o--o{ TICKET : "ditugaskan ke"
+    TICKET ||--o{ TICKET_HANDLING : "ditangani lewat"
+    EMPLOYEE ||--o{ TICKET_HANDLING : "menangani"
+    TICKET ||--o{ WORK_EVIDENCE : "punya bukti"
+    EMPLOYEE ||--o{ WORK_EVIDENCE : "mengunggah"
+    TICKET ||--o{ INVENTORY_USAGE : "memakai barang"
+    INVENTORY ||--o{ INVENTORY_USAGE : "terpakai di"
+    SHIFT ||--o{ SHIFT_MEMBER : "beranggotakan"
+    EMPLOYEE ||--o{ SHIFT_MEMBER : "mengikuti"
+    USER ||--o{ ATTENDANCE : "presensi"
+    SHIFT ||--o{ ATTENDANCE : "terkait"
+    TICKET |o--o{ ATTENDANCE : "kunjungan untuk"
+    ODP |o--o{ ATTENDANCE : "lokasi presensi"
