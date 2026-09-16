@@ -1,22 +1,19 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   ArrowLeft,
   Clock,
   MapPin,
-  Camera,
   MessageSquare,
   ZoomIn,
-  ExternalLink,
 } from 'lucide-react';
 import {
-  formatDate,
-  formatRelativeTime,
   StatusBadge,
   TimelineItem,
   CopyButton,
   LedIndicator,
   LightboxModal,
 } from './ui/Common';
+import { formatDate, formatRelativeTime } from '../services/formatters';
 import { API_BASE } from '../services/api';
 
 export default function DetailLaporan({ selectedLaporan, setActiveTab }) {
@@ -24,11 +21,12 @@ export default function DetailLaporan({ selectedLaporan, setActiveTab }) {
 
   if (!selectedLaporan) {
     return (
-      <div className="max-w-xl mx-auto py-12 text-center bg-white rounded-2xl border border-slate-200/80 p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+      <div className="max-w-xl mx-auto py-12 text-center bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs">
         <p className="text-sm font-semibold text-brand-navy">Laporan belum dipilih</p>
         <button
+          type="button"
           onClick={() => setActiveTab('riwayat')}
-          className="mt-3 px-4 py-2 bg-brand-navy hover:bg-brand-deep text-white text-xs font-medium rounded-xl transition-colors cursor-pointer"
+          className="mt-3 min-h-[44px] px-5 py-2 bg-brand-blue hover:bg-brand-blue-hover text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-xs"
         >
           Kembali ke Riwayat
         </button>
@@ -55,22 +53,23 @@ export default function DetailLaporan({ selectedLaporan, setActiveTab }) {
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
-      {/* Top Header */}
+      {/* Header Detail */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => setActiveTab('riwayat')}
-            className="w-9 h-9 border border-slate-200/80 rounded-xl flex items-center justify-center text-brand-navy hover:bg-brand-ice bg-white transition-colors cursor-pointer"
+            className="w-11 h-11 border border-slate-200/90 rounded-xl flex items-center justify-center text-brand-navy hover:bg-slate-100 bg-white transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-brand-blue"
             title="Kembali ke Riwayat"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <h2 className="text-lg font-bold text-brand-navy tracking-tight">
               Detail Tiket Pelaporan
             </h2>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-brand-blue font-mono font-medium">{no_tiket}</span>
+              <span className="text-xs text-brand-blue font-mono font-semibold">{no_tiket}</span>
               <CopyButton text={no_tiket} label="Salin Tiket" />
             </div>
           </div>
@@ -79,23 +78,23 @@ export default function DetailLaporan({ selectedLaporan, setActiveTab }) {
         <StatusBadge status={status} />
       </div>
 
-      {/* Main Status & Interactive Timeline Card */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 md:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+      {/* Kartu Status & Garis Waktu Penanganan */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-5">
           <div>
-            <span className="text-xs text-slate-400 font-normal">Nomor Registrasi Tiket</span>
+            <span className="text-xs text-slate-500 font-normal">Nomor Registrasi Tiket</span>
             <p className="text-base font-bold text-brand-navy font-mono tracking-tight mt-0.5">
               {no_tiket}
             </p>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 font-normal bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100 w-fit">
-            <Clock className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 w-fit">
+            <Clock className="w-3.5 h-3.5 text-slate-500" />
             <span>Diajukan {formatRelativeTime(waktu_laporan)}</span>
           </div>
         </div>
 
-        {/* Stepper Timeline */}
-        <h4 className="font-semibold text-brand-navy text-sm mb-4">
+        {/* Tahapan Penanganan */}
+        <h4 className="font-bold text-brand-navy text-sm mb-4">
           Progres & Tahapan Penanganan
         </h4>
 
@@ -104,7 +103,7 @@ export default function DetailLaporan({ selectedLaporan, setActiveTab }) {
             active
             isDone
             title="Laporan Masuk & Terverifikasi"
-            desc="Laporan gangguan berhasil masuk ke antrean teknisi NOC Acehlink Media."
+            desc="Laporan gangguan berhasil diverifikasi dan diteruskan ke antrean teknisi lapangan Acehlink."
             date={formatDate(waktu_laporan)}
           />
           <TimelineItem
@@ -113,47 +112,86 @@ export default function DetailLaporan({ selectedLaporan, setActiveTab }) {
             title="Penanganan oleh Teknisi"
             desc={
               status === 'Diproses'
-                ? 'Teknisi lapangan sedang melakukan analisa sinyal redaman kabel fiber / menuju titik ODP Anda.'
+                ? 'Teknisi lapangan sedang memeriksa sinyal redaman fiber atau menuju titik ODP pelanggan.'
                 : isSelesai
-                  ? 'Pemeriksaan dan perbaikan telah tuntas dilakukan.'
-                  : 'Menunggu penugasan teknisi terdekat.'
+                  ? 'Pemeriksaan dan perbaikan jaringan telah tuntas diselesaikan.'
+                  : 'Menunggu alokasi teknisi lapangan.'
             }
+            date={status === 'Diproses' ? 'Sedang berlangsung' : isSelesai ? 'Selesai' : null}
           />
           <TimelineItem
-            active={isSelesai}
+            active={false}
             isDone={isSelesai}
-            isLast
-            title="Tiket Selesai"
+            title="Penyelesaian & Verifikasi Koneksi"
             desc={
               isSelesai
-                ? 'Jaringan internet telah pulih normal kembali. Terima kasih atas laporan Anda.'
-                : 'Menunggu konfirmasi verifikasi dari tim teknisi dan pelanggan.'
+                ? 'Layanan internet telah aktif normal kembali.'
+                : 'Menunggu konfirmasi pemulihan koneksi.'
             }
+            isLast
           />
         </div>
       </div>
 
-      {/* Modem Photo Card (If available) */}
-      {photoUrl && (
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 md:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-          <div className="flex justify-between items-center mb-3">
-            <h4 className="font-semibold text-brand-navy text-sm flex items-center gap-2">
-              <Camera className="w-4 h-4 text-brand-blue" />
-              <span>Bukti Foto Kondisi Modem</span>
-            </h4>
-            <span className="text-[11px] text-slate-400">Klik untuk memperbesar</span>
+      {/* Informasi Masalah & Kondisi Modem */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-xs space-y-4">
+        <h4 className="font-bold text-brand-navy text-sm pb-2.5 border-b border-slate-100">
+          Informasi Gangguan yang Dilaporkan
+        </h4>
+
+        <div className="space-y-3.5 text-xs">
+          <div>
+            <span className="text-slate-500 font-normal block mb-1">Deskripsi Keluhan:</span>
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 leading-relaxed font-normal">
+              <div className="flex items-start gap-2">
+                <MessageSquare className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+                <p>{gangguan}</p>
+              </div>
+            </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 border-t border-slate-100">
+            <div>
+              <span className="text-slate-500 font-normal block mb-1">Status Lampu Modem:</span>
+              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <LedIndicator color={warna_lampu} status={status_lampu} />
+              </div>
+            </div>
+
+            <div>
+              <span className="text-slate-500 font-normal block mb-1">Waktu Mulai Gangguan:</span>
+              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium">
+                {waktu_kejadian ? formatDate(waktu_kejadian) : '-'}
+              </div>
+            </div>
+          </div>
+
+          {lokasi && (
+            <div className="pt-2 border-t border-slate-100">
+              <span className="text-slate-500 font-normal block mb-1">Posisi Router / Modem:</span>
+              <div className="flex items-center gap-2 text-slate-700 font-medium">
+                <MapPin className="w-4 h-4 text-slate-500 shrink-0" />
+                <span>{lokasi}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bukti Foto Modem */}
+      {photoUrl && (
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-xs">
+          <h4 className="font-bold text-brand-navy text-sm mb-3">Foto Kondisi Fisik Modem</h4>
           <div
             onClick={() => setShowLightbox(true)}
-            className="rounded-xl overflow-hidden border border-slate-200/80 bg-slate-50 relative group cursor-pointer"
+            className="relative rounded-xl overflow-hidden border border-slate-200 group cursor-pointer max-w-sm"
           >
             <img
               src={photoUrl}
-              alt="Foto Modem"
-              className="w-full h-auto object-contain max-h-72 rounded-xl group-hover:scale-[1.01] transition-transform"
+              alt="Bukti Lampu Modem"
+              className="w-full h-48 object-cover group-hover:scale-102 transition-transform duration-200"
             />
-            <div className="absolute inset-0 bg-brand-navy/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-medium gap-1.5 backdrop-blur-[1px]">
+            <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold gap-1.5">
               <ZoomIn className="w-4 h-4" />
               <span>Perbesar Foto</span>
             </div>
@@ -161,79 +199,6 @@ export default function DetailLaporan({ selectedLaporan, setActiveTab }) {
         </div>
       )}
 
-      {/* Kondisi Lampu Indikator */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 md:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-        <h4 className="font-semibold text-brand-navy text-sm mb-3">Indikator Lampu Perangkat</h4>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-xs text-slate-400 block font-normal">Warna Lampu</span>
-            <div className="mt-1.5">
-              <LedIndicator color={warna_lampu} status={status_lampu} size="md" />
-            </div>
-          </div>
-          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-xs text-slate-400 block font-normal">Status Kedipan</span>
-            <span className="text-sm font-semibold text-brand-navy block mt-1.5 font-mono">
-              {status_lampu || '-'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Deskripsi Gangguan */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 md:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-        <h4 className="font-semibold text-brand-navy text-sm mb-2.5">Deskripsi Keluhan Pelanggan</h4>
-        <div className="text-xs md:text-sm text-slate-800 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-100 font-normal">
-          {gangguan || '-'}
-        </div>
-      </div>
-
-      {/* Detail Waktu & Lokasi */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 md:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)] space-y-3">
-        <div className="flex justify-between items-start text-xs border-b border-slate-100 pb-2.5">
-          <span className="text-slate-500 flex items-center gap-1.5 font-normal">
-            <Clock className="w-3.5 h-3.5 text-slate-400" />
-            Waktu Awal Kendala
-          </span>
-          <span className="font-medium text-brand-navy">{formatDate(waktu_kejadian)}</span>
-        </div>
-        <div className="flex justify-between items-start text-xs">
-          <span className="text-slate-500 flex items-center gap-1.5 font-normal">
-            <MapPin className="w-3.5 h-3.5 text-slate-400" />
-            Posisi Perangkat
-          </span>
-          <span className="font-medium text-brand-navy text-right max-w-[240px]">
-            {lokasi || '-'}
-          </span>
-        </div>
-      </div>
-
-      {/* Actions Row */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-1">
-        <button
-          type="button"
-          onClick={() => setActiveTab('riwayat')}
-          className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer select-none text-xs md:text-sm"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Kembali ke Riwayat</span>
-        </button>
-
-        <a
-          href={`https://wa.me/628001234567?text=${encodeURIComponent(
-            `Halo Admin Acehlink MEDIA, saya ingin menanyakan progres tiket laporan saya dengan nomor ${no_tiket}.`
-          )}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer select-none text-xs md:text-sm shadow-xs"
-        >
-          <MessageSquare className="w-4 h-4" />
-          <span>Tanyakan Tiket via WhatsApp</span>
-          <ExternalLink className="w-3 h-3 ml-1" />
-        </a>
-      </div>
-
-      {/* Lightbox Modal */}
       {showLightbox && photoUrl && (
         <LightboxModal
           src={photoUrl}

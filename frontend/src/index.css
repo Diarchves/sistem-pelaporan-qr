@@ -1,11 +1,12 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-blue: #0084FF;
-  --color-brand-cyan: #19A7FF;
-  --color-brand-ice: #E8F3FF;
-  --color-brand-navy: #071B4D;
-  --color-brand-deep: #0B255F;
+  --color-brand-blue: #2A69AC;
+  --color-brand-blue-hover: #21558C;
+  --color-brand-blue-light: #4A88CA;
+  --color-brand-ice: #F0F5FA;
+  --color-brand-navy: #1E293B;
+  --color-brand-deep: #0F172A;
 }
 
 @layer base {
@@ -16,8 +17,8 @@
   body {
     margin: 0;
     padding: 0;
-    background-color: #F8FAFD;
-    color: #071B4D;
+    background-color: #F8FAFC;
+    color: #1E293B;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -28,24 +29,13 @@
   }
 }
 
-/* Custom glowing & LED pulse keyframes */
+/* Keyframes indikator LED modem fisik */
 @keyframes led-blink {
   0%, 100% {
     opacity: 1;
-    filter: drop-shadow(0 0 8px currentColor);
   }
   50% {
-    opacity: 0.2;
-    filter: none;
-  }
-}
-
-@keyframes subtle-float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-3px);
+    opacity: 0.3;
   }
 }
 
@@ -53,24 +43,20 @@
   animation: led-blink 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.animate-subtle-float {
-  animation: subtle-float 3s ease-in-out infinite;
-}
-
-/* Glassmorphism helpers */
+/* Panel surface dengan kontras bersih */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .glass-panel-dark {
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(15, 23, 42, 0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-/* Modern sleek custom scrollbar */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
