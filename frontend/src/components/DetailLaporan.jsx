@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   ArrowLeft,
   Clock,
@@ -17,7 +17,22 @@ import { formatDate, formatRelativeTime } from '../services/formatters';
 import { API_BASE } from '../services/api';
 
 export default function DetailLaporan({ selectedLaporan, setActiveTab }) {
-  const [showLightbox, setShowLightbox] = useState(false);
+  const [activeLightboxUrl, setActiveLightboxUrl] = useState(null);
+
+  const photoUrls = useMemo(() => {
+    if (!selectedLaporan) return [];
+    if (selectedLaporan.fotos_modem && Array.isArray(selectedLaporan.fotos_modem) && selectedLaporan.fotos_modem.length > 0) {
+      return selectedLaporan.fotos_modem.map((p) => `${API_BASE}${p}`);
+    }
+    if (selectedLaporan.foto_modem) {
+      return selectedLaporan.foto_modem
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean)
+        .map((p) => `${API_BASE}${p}`);
+    }
+    return [];
+  }, [selectedLaporan]);
 
   if (!selectedLaporan) {
     return (
@@ -38,7 +53,6 @@ export default function DetailLaporan({ selectedLaporan, setActiveTab }) {
     no_tiket,
     status,
     waktu_laporan,
-    foto_modem,
     warna_lampu,
     status_lampu,
     gangguan,
@@ -48,8 +62,6 @@ export default function DetailLaporan({ selectedLaporan, setActiveTab }) {
 
   const isDiproses = status === 'Diproses' || status === 'Selesai';
   const isSelesai = status === 'Selesai';
-
-  const photoUrl = foto_modem ? `${API_BASE}${foto_modem}` : null;
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
@@ -179,31 +191,41 @@ export default function DetailLaporan({ selectedLaporan, setActiveTab }) {
       </div>
 
       {/* Bukti Foto Modem */}
-      {photoUrl && (
+      {photoUrls.length > 0 && (
         <div className="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-xs">
-          <h4 className="font-bold text-brand-navy text-sm mb-3">Foto Kondisi Fisik Modem</h4>
-          <div
-            onClick={() => setShowLightbox(true)}
-            className="relative rounded-xl overflow-hidden border border-slate-200 group cursor-pointer max-w-sm"
-          >
-            <img
-              src={photoUrl}
-              alt="Bukti Lampu Modem"
-              className="w-full h-48 object-cover group-hover:scale-102 transition-transform duration-200"
-            />
-            <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold gap-1.5">
-              <ZoomIn className="w-4 h-4" />
-              <span>Perbesar Foto</span>
-            </div>
+          <div className="flex items-center justify-between mb-3.5">
+            <h4 className="font-bold text-brand-navy text-sm">Foto Kondisi Fisik Modem</h4>
+            <span className="text-xs text-slate-500 font-medium">
+              {photoUrls.length} Foto Terlampir
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {photoUrls.map((url, idx) => (
+              <div
+                key={idx}
+                onClick={() => setActiveLightboxUrl(url)}
+                className="relative rounded-xl overflow-hidden border border-slate-200 group cursor-pointer aspect-video bg-slate-100 shadow-2xs"
+              >
+                <img
+                  src={url}
+                  alt={`Bukti Lampu Modem ${idx + 1}`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                />
+                <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold gap-1.5">
+                  <ZoomIn className="w-4 h-4" />
+                  <span>Perbesar #{idx + 1}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {showLightbox && photoUrl && (
+      {activeLightboxUrl && (
         <LightboxModal
-          src={photoUrl}
+          src={activeLightboxUrl}
           alt={`Foto Modem Tiket ${no_tiket}`}
-          onClose={() => setShowLightbox(false)}
+          onClose={() => setActiveLightboxUrl(null)}
         />
       )}
     </div>

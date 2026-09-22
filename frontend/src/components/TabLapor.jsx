@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Camera,
@@ -14,9 +14,8 @@ import { SectionBox, Pill, LightboxModal } from './ui/Common';
 import { submitLaporan } from '../services/api';
 
 export default function TabLapor({ session, setActiveTab, onLaporanSuccess }) {
-  const [foto, setFoto] = useState(null);
-  const [fotoPreview, setFotoPreview] = useState(null);
-  const [showLightbox, setShowLightbox] = useState(false);
+  const [fotos, setFotos] = useState([]);
+  const [lightboxUrl, setLightboxUrl] = useState(null);
   const [warnaLampu, setWarnaLampu] = useState('Merah');
   const [statusLampu, setStatusLampu] = useState('Berkedip');
   const [deskripsi, setDeskripsi] = useState('');
@@ -36,6 +35,15 @@ export default function TabLapor({ session, setActiveTab, onLaporanSuccess }) {
     { label: 'Modem Mati / Padam', warna: 'Tidak Menyala', status: 'Mati Total', text: 'Perangkat router/modem padam total dan tidak ada lampu indikator yang menyala.' },
   ];
 
+  // Bersihkan blob URL saat komponen di-unmount
+  useEffect(() => {
+    return () => {
+      fotos.forEach((item) => {
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      });
+    };
+  }, [fotos]);
+
   const handleApplyPreset = (item) => {
     setWarnaLampu(item.warna);
     setStatusLampu(item.status);
@@ -43,23 +51,42 @@ export default function TabLapor({ session, setActiveTab, onLaporanSuccess }) {
   };
 
   const handleFotoChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length === 0) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMessage('Ukuran file foto maksimal 5 MB.');
+    if (fotos.length + selectedFiles.length > 5) {
+      setErrorMessage('Maksimal 5 foto bukti modem yang dapat diunggah.');
+      e.target.value = '';
       return;
     }
 
+    for (const file of selectedFiles) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrorMessage(`Ukuran berkas "${file.name}" melebihi batas maksimal 5 MB.`);
+        e.target.value = '';
+        return;
+      }
+    }
+
     setErrorMessage('');
-    setFoto(file);
-    setFotoPreview(URL.createObjectURL(file));
+    const newItems = selectedFiles.map((file) => ({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+
+    setFotos((prev) => [...prev, ...newItems]);
+    e.target.value = '';
   };
 
-  const handleRemoveFoto = () => {
-    setFoto(null);
-    if (fotoPreview) URL.revokeObjectURL(fotoPreview);
-    setFotoPreview(null);
+  const handleRemoveFoto = (idToRemove) => {
+    setFotos((prev) => {
+      const target = prev.find((item) => item.id === idToRemove);
+      if (target?.previewUrl) {
+        URL.revokeObjectURL(target.previewUrl);
+      }
+      return prev.filter((item) => item.id !== idToRemove);
+    });
   };
 
   const setWaktuSekarang = () => {
@@ -82,6 +109,11 @@ export default function TabLapor({ session, setActiveTab, onLaporanSuccess }) {
       return;
     }
 
+    if (fotos.length === 0) {
+      setErrorMessage('Foto bukti kondisi lampu modem wajib diunggah (minimal 1 foto).');
+      return;
+    }
+
     setIsSubmitting(true);
     const fd = new FormData();
     fd.append('id_pelanggan', session.id_pelanggan);
@@ -94,9 +126,9 @@ export default function TabLapor({ session, setActiveTab, onLaporanSuccess }) {
     const datetimeStr = `${tanggal}T${waktu}:00Z`;
     fd.append('waktu_kejadian', datetimeStr);
 
-    if (foto) {
-      fd.append('foto_modem', foto);
-    }
+    fotos.forEach((item) => {
+      fd.append('foto_modem', item.file);
+    });
 
     try {
       const result = await submitLaporan(fd);
@@ -254,72 +286,109 @@ export default function TabLapor({ session, setActiveTab, onLaporanSuccess }) {
 
             {/* Bagian 3: Foto Bukti Modem */}
             <SectionBox
-              title="Foto Bukti Lampu Modem (Opsional)"
-              subtitle="Sangat disarankan untuk mempercepat diagnosa teknisi di lapangan"
+              title="Foto Bukti Lampu Modem (Wajib)"
+              subtitle="Unggah 1 hingga 5 foto kondisi fisik atau lampu modem untuk verifikasi teknisi"
               prefix="3"
             >
-              <div className="flex flex-col sm:flex-row gap-4">
-                <label className="flex-1 border-2 border-dashed border-slate-300 hover:border-brand-blue rounded-xl bg-slate-50 hover:bg-brand-ice transition-colors cursor-pointer flex flex-col items-center justify-center p-5 min-h-[140px] group focus-within:ring-2 focus-within:ring-brand-blue">
-                  <div className="w-11 h-11 bg-white rounded-xl border border-slate-200 flex items-center justify-center mb-2.5 text-brand-navy shadow-2xs">
-                    <Camera className="w-5 h-5" />
+              <div className="space-y-4">
+                {/* Upload Dropzone / Button */}
+                {fotos.length < 5 ? (
+                  <label className="border-2 border-dashed border-slate-300 hover:border-brand-blue rounded-xl bg-slate-50 hover:bg-brand-ice transition-colors cursor-pointer flex flex-col items-center justify-center p-5 min-h-[120px] group focus-within:ring-2 focus-within:ring-brand-blue">
+                    <div className="w-11 h-11 bg-white rounded-xl border border-slate-200 flex items-center justify-center mb-2.5 text-brand-navy shadow-2xs">
+                      <Camera className="w-5 h-5" />
+                    </div>
+                    <span className="font-semibold text-brand-navy text-xs flex items-center gap-1">
+                      {fotos.length === 0 ? 'Ambil Foto / Pilih Berkas' : 'Tambah Foto Lainnya'}{' '}
+                      <span className="text-red-600 font-bold">*</span>
+                    </span>
+                    <span className="text-xs text-slate-500 mt-0.5 text-center max-w-sm">
+                      Dapat memilih beberapa foto sekaligus (Maks. 5 foto, maks. 5 MB per foto)
+                    </span>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleFotoChange}
+                      className="hidden"
+                    />
+                  </label>
+                ) : (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-600 font-medium">
+                    Batas maksimal 5 foto telah tercapai. Hapus salah satu foto jika ingin mengganti.
                   </div>
-                  <span className="font-semibold text-brand-navy text-xs">
-                    Ambil Foto / Pilih Berkas
-                  </span>
-                  <span className="text-xs text-slate-500 mt-0.5 text-center max-w-[200px]">
-                    Foto lampu indikator modem (Maks. 5 MB)
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={handleFotoChange}
-                    className="hidden"
-                  />
-                </label>
+                )}
 
-                {/* Box Preview */}
-                <div className="w-full sm:w-60 space-y-1.5">
-                  <span className="text-xs font-semibold text-slate-600 block">Preview Foto:</span>
-                  {fotoPreview ? (
-                    <div className="border border-slate-200 bg-white rounded-xl p-2.5 flex items-center gap-2.5 shadow-2xs">
-                      <div
-                        onClick={() => setShowLightbox(true)}
-                        className="relative cursor-pointer group"
-                        title="Perbesar foto"
-                      >
-                        <img
-                          src={fotoPreview}
-                          alt="Preview bukti modem"
-                          className="w-12 h-12 rounded-lg bg-slate-100 object-cover shrink-0"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-brand-navy truncate">{foto?.name}</p>
-                        <p className="text-xs text-emerald-700 font-medium mt-0.5">
-                          {(foto?.size / 1024 / 1024).toFixed(2)} MB • Siap Kirim
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleRemoveFoto}
-                        className="min-h-[36px] min-w-[36px] p-2 text-slate-500 hover:text-red-700 rounded-lg hover:bg-red-50 transition-colors cursor-pointer flex items-center justify-center"
-                        title="Hapus foto"
-                        aria-label="Hapus foto"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="border border-slate-200 rounded-xl p-3 flex items-center gap-2.5 bg-slate-50">
-                      <div className="w-10 h-10 rounded-lg bg-slate-200 flex items-center justify-center text-xs text-slate-600 font-medium text-center">
-                        Foto
-                      </div>
-                      <div className="text-xs text-slate-500 leading-tight">
-                        Belum ada berkas yang dipilih.
-                      </div>
-                    </div>
-                  )}
+                {/* Status Bar Jumlah Foto */}
+                <div className="flex items-center justify-between text-xs px-0.5">
+                  <span className="font-semibold text-slate-700">
+                    Foto Terpilih: {fotos.length} dari 5 foto
+                  </span>
+                  <span
+                    className={`font-semibold ${
+                      fotos.length > 0 ? 'text-emerald-700' : 'text-amber-800'
+                    }`}
+                  >
+                    {fotos.length > 0
+                      ? `✓ ${fotos.length} foto siap dikirim`
+                      : 'Wajib melampirkan minimal 1 foto *'}
+                  </span>
                 </div>
+
+                {/* Box Preview Grid */}
+                {fotos.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {fotos.map((item, idx) => (
+                      <div
+                        key={item.id}
+                        className="border border-slate-200 bg-white rounded-xl p-2.5 flex items-center gap-2.5 shadow-2xs group"
+                      >
+                        <div
+                          onClick={() => setLightboxUrl(item.previewUrl)}
+                          className="relative cursor-pointer shrink-0 rounded-lg overflow-hidden"
+                          title="Perbesar foto"
+                        >
+                          <img
+                            src={item.previewUrl}
+                            alt={`Bukti modem ${idx + 1}`}
+                            className="w-12 h-12 bg-slate-100 object-cover rounded-lg group-hover:scale-105 transition-transform"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className="text-xs font-semibold text-brand-navy truncate"
+                            title={item.file.name}
+                          >
+                            {item.file.name}
+                          </p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            {(item.file.size / 1024 / 1024).toFixed(2)} MB • Foto #{idx + 1}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFoto(item.id)}
+                          className="min-h-[44px] min-w-[44px] p-2 text-slate-400 hover:text-red-700 rounded-lg hover:bg-red-50 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                          title={`Hapus foto ${item.file.name}`}
+                          aria-label={`Hapus foto ${item.file.name}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border border-slate-200 rounded-xl p-3.5 flex items-center gap-3 bg-slate-50">
+                    <div className="w-10 h-10 rounded-lg bg-slate-200 flex items-center justify-center text-xs text-slate-600 font-medium text-center shrink-0">
+                      Foto
+                    </div>
+                    <div className="text-xs text-slate-500 leading-tight">
+                      Belum ada berkas foto yang dipilih.{' '}
+                      <span className="text-amber-800 font-medium block mt-0.5">
+                        Wajib menyertakan minimal 1 foto modem.
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </SectionBox>
 
@@ -417,9 +486,11 @@ export default function TabLapor({ session, setActiveTab, onLaporanSuccess }) {
               <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                 <span className="text-slate-500 font-normal">Foto Bukti</span>
                 <span
-                  className={`font-semibold ${foto ? 'text-emerald-700' : 'text-slate-500'}`}
+                  className={`font-semibold text-xs ${
+                    fotos.length > 0 ? 'text-emerald-700' : 'text-amber-800'
+                  }`}
                 >
-                  {foto ? '✓ Siap Diunggah' : 'Tidak Ada'}
+                  {fotos.length > 0 ? `✓ ${fotos.length} Foto Terpilih` : 'Wajib Diunggah *'}
                 </span>
               </div>
               <div className="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -471,11 +542,11 @@ export default function TabLapor({ session, setActiveTab, onLaporanSuccess }) {
         </div>
       </div>
 
-      {showLightbox && fotoPreview && (
+      {lightboxUrl && (
         <LightboxModal
-          src={fotoPreview}
-          alt={foto?.name || 'Foto Modem'}
-          onClose={() => setShowLightbox(false)}
+          src={lightboxUrl}
+          alt="Preview Foto Modem"
+          onClose={() => setLightboxUrl(null)}
         />
       )}
     </div>

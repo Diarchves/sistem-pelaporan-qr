@@ -6,6 +6,7 @@ import {
   Check,
   X,
   Activity,
+  Camera,
 } from 'lucide-react';
 import { formatRelativeTime } from '../../services/formatters';
 
@@ -152,41 +153,53 @@ export const LedIndicator = ({ color, status, size = 'md' }) => {
   );
 };
 
-export const LaporanCard = ({ lap, onClick }) => (
-  <div
-    className="group bg-white border border-slate-200/90 hover:border-brand-blue/50 transition-colors duration-150 rounded-2xl p-5 cursor-pointer flex flex-col justify-between shadow-xs"
-    onClick={onClick}
-  >
-    <div>
-      <div className="flex justify-between items-start mb-3 gap-2">
-        <span className="font-bold text-brand-navy text-sm tracking-tight font-mono group-hover:text-brand-blue transition-colors">
-          {lap.no_tiket}
-        </span>
-        <StatusBadge status={lap.status} />
+export const LaporanCard = ({ lap, onClick }) => {
+  const photoCount = lap.fotos_modem?.length || (lap.foto_modem ? lap.foto_modem.split(',').filter(Boolean).length : 0);
+
+  return (
+    <div
+      className="group bg-white border border-slate-200/90 hover:border-brand-blue/50 transition-colors duration-150 rounded-2xl p-5 cursor-pointer flex flex-col justify-between shadow-xs"
+      onClick={onClick}
+    >
+      <div>
+        <div className="flex justify-between items-start mb-3 gap-2">
+          <span className="font-bold text-brand-navy text-sm tracking-tight font-mono group-hover:text-brand-blue transition-colors">
+            {lap.no_tiket}
+          </span>
+          <StatusBadge status={lap.status} />
+        </div>
+
+        <p className="text-sm text-slate-700 mb-3.5 line-clamp-2 leading-relaxed font-normal">
+          {lap.gangguan}
+        </p>
+
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          {lap.warna_lampu && (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-700">
+              <LedIndicator color={lap.warna_lampu} status={lap.status_lampu} size="sm" />
+            </div>
+          )}
+          {photoCount > 0 && (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium">
+              <Camera className="w-3.5 h-3.5 text-slate-500" />
+              <span>{photoCount} Foto</span>
+            </div>
+          )}
+        </div>
       </div>
 
-      <p className="text-sm text-slate-700 mb-3.5 line-clamp-2 leading-relaxed font-normal">
-        {lap.gangguan}
-      </p>
-
-      {lap.warna_lampu && (
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-700 mb-3">
-          <LedIndicator color={lap.warna_lampu} status={lap.status_lampu} size="sm" />
-        </div>
-      )}
+      <div className="flex justify-between items-center text-xs text-slate-500 pt-3 border-t border-slate-100">
+        <span className="flex items-center gap-1.5 font-normal">
+          <Clock className="w-3.5 h-3.5 text-slate-500" />
+          <span>{formatRelativeTime(lap.waktu_laporan)}</span>
+        </span>
+        <span className="font-semibold text-brand-blue underline-offset-2 group-hover:underline">
+          Lihat Detail
+        </span>
+      </div>
     </div>
-
-    <div className="flex justify-between items-center text-xs text-slate-500 pt-3 border-t border-slate-100">
-      <span className="flex items-center gap-1.5 font-normal">
-        <Clock className="w-3.5 h-3.5 text-slate-500" />
-        <span>{formatRelativeTime(lap.waktu_laporan)}</span>
-      </span>
-      <span className="font-semibold text-brand-blue underline-offset-2 group-hover:underline">
-        Lihat Detail
-      </span>
-    </div>
-  </div>
-);
+  );
+};
 
 export const SectionBox = ({ title, subtitle, prefix, children }) => (
   <div className="bg-white border border-slate-200/90 shadow-xs rounded-2xl p-5 md:p-6 transition-colors">

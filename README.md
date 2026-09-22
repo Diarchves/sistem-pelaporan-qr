@@ -20,13 +20,13 @@ Aplikasi pelaporan gangguan layanan internet cepat, aman, dan terverifikasi untu
 ---
 
 ## 🛠️ Tech Stack
-
-### **Backend**
-- **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Python 3.10+)
-- **ORM & Database**: [SQLAlchemy 2.0](https://www.sqlalchemy.org/) dengan SQLite (Mudah dimigrasikan ke PostgreSQL/MySQL)
-- **Validation**: [Pydantic v2](https://docs.pydantic.dev/)
-- **Server**: [Uvicorn](https://www.uvicorn.org/)
-- **QR Generator**: `qrcode[pil]`
+ 
+### **Backend (Terintegrasi ke `backend-api`)**
+- **Framework**: [NestJS 10.x](https://nestjs.com/) (TypeScript)
+- **ORM & Database**: [Prisma ORM 5.x](https://www.prisma.io/) dengan PostgreSQL 16 (Docker)
+- **Validation**: `class-validator` & `class-transformer`
+- **Dokumentasi**: Swagger / OpenAPI 3.0 interaktif
+- **QR Generator**: `qrcode` (TypeScript CLI `npm run qr`)
 
 ### **Frontend**
 - **Framework**: [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
@@ -39,28 +39,15 @@ Aplikasi pelaporan gangguan layanan internet cepat, aman, dan terverifikasi untu
 
 ```text
 sistem-pelaporan-qr/
-├── backend/
-│   ├── main.py              # Entry point FastAPI, routing, CORS, dan static files
-│   ├── database.py          # Konfigurasi koneksi SQLite & session SQLAlchemy
-│   ├── models.py            # Definisi skema relasi database (Clients, Tickets, QrCodes, dll)
-│   ├── schemas.py           # Pydantic schemas untuk validasi request & response
-│   ├── security.py          # Validasi tipe file & sanitasi nama file upload
-│   ├── seed.py              # Inisialisasi database awal beserta data dummy
-│   ├── generate_qr.py       # Generator token & gambar QR Code per pelanggan
-│   ├── requirements.txt     # Dependensi Python
-│   ├── routers/             # Endpoint modular
-│   │   ├── pelanggan.py     # Endpoint verifikasi QR & info pelanggan
-│   │   └── laporan.py       # Endpoint pembuatan tiket & update status
-│   ├── qr_codes/            # Hasil cetak berkas gambar QR Code (.png)
-│   └── uploads/             # Berkas foto keluhan yang diunggah pelanggan
 ├── frontend/
 │   ├── src/
-│   │   ├── components/      # Komponen antarmuka (Header, Form, Riwayat, Profil)
-│   │   ├── services/api.js  # Integrasi Axios/Fetch ke backend FastAPI
+│   │   ├── components/      # Komponen antarmuka (Header, Form, Riwayat, Profil, Detail)
+│   │   ├── services/api.js  # Integrasi Axios/Fetch ke backend utama (port 3000)
 │   │   ├── App.jsx          # Logika navigasi & state utama
 │   │   └── main.jsx         # Entry point React
 │   ├── package.json
-│   └── vite.config.js
+│   ├── vite.config.js
+│   └── .env                 # VITE_API_BASE_URL=http://localhost:3000
 ├── ERD-UTAMA.png            # Visualisasi Entity Relationship Diagram
 ├── Main-ERD.mermaid         # Definisi Mermaid schema relasi database
 ├── .gitignore               # Konfigurasi git ignore
@@ -72,58 +59,23 @@ sistem-pelaporan-qr/
 
 ## 🚀 Panduan Memulai (Getting Started)
 
-### 1. Prasyarat Sistem
-- **Python** 3.10 atau versi lebih baru
-- **Node.js** v18+ dan **npm**
-- **Git**
+### 1. Menjalankan Backend API Utama
 
----
-
-### 2. Menjalankan Backend
-
-1. Buka terminal dan masuk ke direktori `backend`:
-   ```bash
-   cd backend
-   ```
-
-2. Buat virtual environment dan aktifkan:
-   ```bash
-   python -m venv .venv
-   # Di Linux / macOS:
-   source .venv/bin/activate
-   # Di Windows:
-   .venv\Scripts\activate
-   ```
-
-3. Pasang seluruh dependensi:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Jalankan seeder data awal (opsional, untuk membuat data awal dan sampel pelanggan):
-   ```bash
-   python seed.py
-   ```
-
-5. Jalankan server FastAPI:
-   ```bash
-   uvicorn main:app --reload --host 127.0.0.1 --port 8000
-   ```
-   > 📖 Dokumentasi Swagger UI interaktif dapat diakses di: [http://localhost:8000/docs](http://localhost:8000/docs)
-
----
-
-### 3. Generate QR Code Pelanggan
-
-Untuk menghasilkan QR Code bagi pelanggan tertentu:
+Backend API kini terintegrasi secara modular pada folder `backend-api` di root workspace:
 ```bash
-python generate_qr.py <id_pelanggan>
+# Dari root workspace:
+docker compose up -d
 ```
-*Contoh:*
+API akan berjalan di `http://localhost:3000` dengan Swagger docs di `http://localhost:3000/api/docs`.
+
+### 2. Generate QR Code Pelanggan
+
+Untuk menghasilkan token dan barcode QR pelanggan:
 ```bash
-python generate_qr.py 1
+cd backend-api
+npm run qr -- <id_atau_kode_pelanggan>
+# Contoh: npm run qr -- ACL-001234
 ```
-Hasil file gambar QR Code akan tersimpan di folder `backend/qr_codes/<customer_number>.png` lengkap dengan URL akses berparameter token rahasia.
 
 ---
 
